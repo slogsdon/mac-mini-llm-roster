@@ -1,14 +1,12 @@
 
 
-## ⚠ Update 2026-05-23 (later same day) — roster shuffle: qwen3.6 replaces `general` + `vision`, plus 3 new aliases
+## Roster shuffle that prompted this delta run (2026-05-23, later same day)
 
-The first benchmark surfaced two real problems and one opportunity:
+Run 1 left me with two real problems and one opening.
 
-1. **qwen3.5:9b-mlx over-reasons at production budgets.** It timed out on the French-translation prompt and used 30k chars of thinking on a 60-word writing task. Forcing `think:false` makes it usable (re-tested in the delta benchmark below), but at that point the only thing qwen3.5 buys you over `vision` (qwen3-vl:30b) is memory.
-2. **gemma4:e4b-mlx emits thinking even when not asked.** Its `e4b-mlx` template has thinking baked in. `think:false` fixes it (re-tested below). The LiteLLM `fast-general` route now forces it off so callers don't have to know.
-3. **qwen3-vl:30b is 36 tps even on text-only prompts** — faster than every general-purpose model. The 30B vision-tuned model is a better text default than the 9B chat model, on this host.
+The problems: qwen3.5:9b-mlx over-reasons at production budgets — 30k chars of thinking on a 60-word writing task, plus a >15-minute timeout on the French translation. And gemma4:e4b-mlx emits thinking even when I don't ask it to, because the `e4b-mlx` template has thinking baked into the chat format. Both are fixable by forcing `think:false`; both got re-tested below to confirm.
 
-That last finding combined with availability of **qwen3.6:35b-mlx** (MLX MoE, vision-capable, thinking-capable, 21 GB weights) → consolidate `general` and `vision` onto qwen3.6.
+The opening: qwen3-vl:30b runs at 36 tps on text-only prompts, faster than every general-purpose model I had. A 30B vision-tuned MoE turned out to be a better text default than my 9B chat model. Combined with qwen3.6:35b-mlx becoming available (also MLX, also MoE, also vision-capable, also thinking-capable, similar 21 GB footprint), this opened the door to consolidating `general` and `vision` onto one backing model.
 
 ### Roster as of 2026-05-23 evening
 
@@ -33,22 +31,24 @@ That last finding combined with availability of **qwen3.6:35b-mlx** (MLX MoE, vi
 - `qwen3.5:9b-mlx` — kept pulled for raw-tag invocation / benchmarking. No production alias.
 - `qwen3-vl:30b` — kept pulled for raw-tag invocation / benchmarking. The `vision` alias now points at qwen3.6:35b-mlx.
 
-### Why these particular new aliases
+### Why these new aliases
 
-- **`instruct` (ministral-3:14b)** — at ~9 GB it's the same size class as `capable` (qwen3:14b) but with vision and *no* thinking channel. Fills a gap: structured tool-use with images that doesn't pay the reasoning tax.
-- **`efficient` (lfm2:24b)** — MoE 24B, ~14 GB. No thinking channel. Direct competitor with `capable-large` (gpt-oss:20b, 13 GB, with thinking). If `efficient` is faster on equivalent tasks, it becomes the default for "fast 20B-class".
-- **`tiny-reason` (lfm2.5-thinking:1.2b)** — 731 MB. Tiny enough that it can run alongside any model without eviction. Use case: throwaway logic decisions where you want chain-of-thought but can't afford phi4's 15 minutes.
+`instruct` (ministral-3:14b): same size class as `capable` (qwen3:14b at ~9 GB) but with vision and no thinking channel. Fills a real gap — structured tool-use with images that doesn't pay the reasoning tax.
 
-Use-case slotting is provisional pending the delta-benchmark results below.
+`efficient` (lfm2:24b): MoE 24B at ~14 GB, no thinking channel. Direct competitor with `capable-large` (gpt-oss:20b, 13 GB, with thinking). If it's faster on equivalent tasks it earns the primary slot.
+
+`tiny-reason` (lfm2.5-thinking:1.2b): 731 MB. Small enough to run alongside anything else without eviction. Use case is throwaway logic decisions where I want chain-of-thought but can't afford phi4's 15 minutes.
+
+Slotting was provisional pending the numbers below.
 
 
-## Delta Speed Benchmark — 6 models, post-roster-shuffle (2026-05-23)
+## Delta speed benchmark — 6 models (2026-05-23)
 
-> Same 8 prompts, same script (`~/Code/otel-local-ai/scripts/roster_speed_test.py`). Re-ran qwen3.5 + gemma4 with `think:false` to test the production fix, plus the 4 new models. The 8 unchanged models from the first benchmark above are not re-run — their numbers stand.
+> Same 8 prompts, same script. Re-ran qwen3.5 and gemma4 with `think:false` to confirm the production fix, plus the 4 new models. The other 8 from run 1 don't need re-measuring — their numbers stand.
 >
-> Total wall time: **11.8 min** (vs 107 min for the full 10-model run). Per-model `num_ctx` / `num_predict` unchanged from the first run.
+> Total wall time: **11.8 min** (vs 107 min for the full 10-model run 1). Per-model `num_ctx` and `num_predict` unchanged.
 >
-> Raw results: `~/Code/otel-local-ai/benchmarks/2026-05-23-roster-speed-delta/results.json`.
+> Raw data: `results.json` next to this file.
 
 ### Models in this delta run
 
@@ -116,61 +116,38 @@ Use-case slotting is provisional pending the delta-benchmark results below.
 | efficient | `To find the number of apples remaining: \\  \\ 1. **Initial Apples:** 47   \\ 2.` |
 | tiny-reason | `The store starts with 47 apples. After selling 23, it has 47 - 23 = 24. Then rec` |
 
-### Findings & decisions
+### What I took away
 
-**The think:false fixes are dramatic.**
+**The `think:false` fixes were dramatic.**
 
-| model | before (with thinking) | after (think:false) | delta |
+| model | with thinking (run 1) | `think:false` (this run) | delta |
 |---|---|---|---|
-| `fast-general` (gemma4) total wall | 133s | **49s** | 2.7× faster |
-| `general` (qwen3.5) total wall | 988s + 1 timeout | **55s** | 18× faster, no timeouts |
+| `fast-general` (gemma4) total wall | 133s | 49s | 2.7× faster |
+| `general` (qwen3.5) total wall | 988s + 1 timeout | 55s | 18× faster, no timeouts |
 
-Same models, same prompts. The previous "this model is too slow / hangs" findings were entirely a thinking-channel issue. Both production routes now force `think:false` in LiteLLM. **qwen3.5 is *usable* again — but at 16 tps median it's still the slowest non-thinking option in the roster, which is why it's losing the `general` alias anyway.**
+Same models, same prompts. Everything I'd previously written off as "this model is too slow" or "this one hangs" was a thinking-channel config bug, not a model problem. Both production routes now force `think:false` in LiteLLM so callers don't have to know. qwen3.5 is usable again, but at 16 tps median it's still the slowest non-thinking option in the roster — which is why it's losing the `general` alias anyway.
 
-**`efficient` (lfm2:24b) is the unambiguous winner of this run — 56 tps median, 18 s total.**
-
-Direct head-to-head with `capable-large` (gpt-oss:20b) on the same 8 prompts:
+**`efficient` (lfm2:24b) won this run.** 56 tps median, 18 seconds total wall for 8 prompts. Head-to-head with `capable-large` (gpt-oss:20b) on the same prompts:
 
 | metric | `capable-large` (gpt-oss:20b) | `efficient` (lfm2:24b) | winner |
 |---|---|---|---|
-| median tps | 25 | **56** | efficient by 2.2× |
-| total wall (8 prompts) | 122s | **18s** | efficient by 6.8× |
+| median tps | 25 | 56 | efficient by 2.2× |
+| total wall (8 prompts) | 122s | 18s | efficient by 6.8× |
 | weights | 13 GB | 14 GB | tie |
 | math-reason correctness | ✓ 42 | ✓ 42 | tie |
 | writing-blurb quality | ✓ clean | ✓ clean | tie |
 
-lfm2 is faster on every prompt and produces clean output. **Promote `efficient` to the default 20B-class slot; relegate `capable-large` to "secondary when you specifically need gpt-oss's reasoning channel."**
+Faster on every prompt with comparable output quality. Promoted `efficient` to the primary 20B-class slot; `capable-large` becomes the secondary you reach for when you specifically want gpt-oss's reasoning-channel style.
 
-**`general-next` (qwen3.6:35b-mlx) is the right replacement for both `general` and `vision`.**
+**`general-next` (qwen3.6:35b-mlx) replaces both `general` and `vision`.** 35 tps median (the old `vision` qwen3-vl was 36 tps, the old `general` qwen3.5 was 16 tps). 21 GB weights vs 19 GB for qwen3-vl — comparable footprint, MoE so active params are well below total. Cold load was 9.6 seconds, the fastest of any 20B+ model in the matrix. Thinking is on by default; clients should pass `think:false` for trivial chat to stay in the 35 tps regime, and `think:true` when they want the reasoning channel. There's no reason to keep two large models for two roles when one handles both.
 
-- 35 tps median (vs the old `vision` qwen3-vl at 36 tps, and the old `general` qwen3.5 at 16 tps)
-- 21 GB weights vs 19 GB for qwen3-vl — comparable footprint, MoE so active params << total
-- Cold load: 9.6 s — fastest of any 20B+ model
-- Thinking is enabled by default; clients should pass `think:false` for trivial chat to stay in the 35 tps regime, and `think:true` for harder questions to get the reasoning channel
-- Math-reason output is clean and correct
-- Replaces both aliases — there's no reason to keep two large models for two roles when one model handles both
+**`instruct` (ministral-3:14b) fills the vision + tools gap.** 13 tps median, no thinking, vision input native. Same speed class as `capable` (qwen3:14b at 11 tps) but adds vision and skips the thinking tax. Right fit for structured tool-use (Hermes / Pi function-calling) where I want clean instruction-following without chain-of-thought, vision tasks that don't need qwen3.6's reasoning depth, and as a smaller alternative to `general` when memory pressure rules out the 35B.
 
-**`instruct` (ministral-3:14b) fills a real gap — 13 tps, no thinking, vision + tools.**
+**`tiny-reason` (lfm2.5-thinking:1.2b) is fast and brittle — 116 tps median.** Fastest model in the roster by a wide margin. 731 MB weights so it runs alongside anything without eviction. 0.9 second cold load. Math output was correct and concise.
 
-Same speed class as `capable` (qwen3:14b at 11 tps median) but adds vision input and skips the thinking tax. Good fit for:
-- Structured tool-use calls (Hermes/Pi function-calling) where you want clean instruction-following, no chain-of-thought
-- Vision tasks that need fast turnaround and don't need qwen3.6's reasoning depth
-- A "smaller alternative to general" when memory pressure rules out the 35B model
+But: on the trivial "capital of France" prompt it answered `Paris\n\nWait, wait, wait. Wait, the user said "Repl...` — second-guessing itself out loud. And it burned its full 8K `num_predict` on the writing prompt to return empty content, the same failure mode qwen3.5 had at 32K. Always emits 1k–30k chars of thinking even on trivial prompts.
 
-**`tiny-reason` (lfm2.5-thinking:1.2b) is a niche speed weapon, not a general default — 116 tps median but unstable.**
-
-Pros:
-- Fastest model in the roster by a wide margin (116 tps median)
-- 731 MB weights — runs anywhere, alongside anything, never gets evicted
-- Cold load: 0.9 s
-- Math output was correct (42) and concise
-
-Cons:
-- On the trivial "capital of France" prompt it answered "Paris" then immediately second-guessed itself: `Paris\n\nWait, wait, wait. Wait, the user said "Repl...` — output stability is a real concern
-- Burned its full 8K `num_predict` budget on the writing prompt and returned **empty content** — same failure mode as qwen3.5 had at 32K
-- Always emits 1k-30k chars of thinking, even on trivial prompts
-
-Use cases (narrow): fast yes/no logic decisions in pipelines, pre-flight validation steps, quality-filter classifiers. Wrap output with a content-empty guard.
+Use cases are narrow: fast yes/no logic decisions in pipelines, pre-flight validation, quality-filter classifiers. Wrap the output with an empty-content guard.
 
 ### Final proposed roster adjustments (consolidating both benchmarks)
 
@@ -202,5 +179,5 @@ Use cases (narrow): fast yes/no logic decisions in pipelines, pre-flight validat
 - **Multi-step planning, math, willing to wait** → `reasoning` (phi4)
 - **Vision + tool-calling** → `instruct` (ministral-3)
 - **Fast yes/no pipeline step** → `tiny-reason` (lfm2.5-thinking)
-- **Multilingual / Chinese** → still `flash` for now, though re-evaluate against `general-next`
+- **Multilingual / Chinese** → use `general` (qwen3.6:35b-mlx); `flash` was retired after this run
 

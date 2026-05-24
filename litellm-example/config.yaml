@@ -1,15 +1,17 @@
-# Minimal LiteLLM proxy config demonstrating the role-alias pattern.
+# Minimal LiteLLM proxy config showing the role-alias pattern.
 #
-# This is a sanitized version of the config used for the benchmarks in
-# ../data/. The real config also runs OTel + Langfuse callbacks; those
-# are omitted here because they're orthogonal to the routing pattern.
+# This is a sanitized version of what runs in front of the Ollama roster
+# in the benchmarks under ../data/. My real config also runs OTel and
+# Langfuse callbacks; both are omitted here because they're orthogonal
+# to the routing.
 #
-# The key idea: every alias is a *config bundle* — model tag + context
-# window + thinking setting + any other per-model overrides. Clients
-# request the alias; the proxy applies the bundle. Swap models without
-# touching client code.
+# The whole idea: each alias is a config bundle. Model tag, context
+# window, thinking setting, anything else that's per-model. Clients ask
+# for the alias; the proxy applies the bundle. When a model needs to be
+# swapped or its think setting flipped, it happens here, in one place,
+# without touching any client.
 #
-# Run with the LiteLLM proxy: https://docs.litellm.ai/docs/simple_proxy
+# LiteLLM proxy docs: https://docs.litellm.ai/docs/simple_proxy
 
 model_list:
   - model_name: code-autocomplete
@@ -23,9 +25,10 @@ model_list:
       model: ollama_chat/gemma4:e4b-mlx
       api_base: http://host.docker.internal:11434
       num_ctx: 65536
-      # gemma4's template emits a <think> channel even on trivial prompts —
-      # burns the entire num_predict budget on internal monolog and returns
-      # empty content. Force off so this alias actually behaves "fast".
+      # gemma4's chat template has thinking baked in. If you don't force
+      # it off you'll watch it burn an entire 16K budget on internal
+      # monolog and return empty content. Force off so the alias
+      # actually behaves "fast".
       think: false
 
   - model_name: code-review
@@ -52,10 +55,11 @@ model_list:
       model: ollama_chat/phi4-reasoning:plus
       api_base: http://host.docker.internal:11434
       num_ctx: 32768
-      # phi4-reasoning always emits <think>...</think>. Force think:true so
-      # Ollama parses them into the thinking field instead of the content
-      # channel. Requires a rebuilt Modelfile that declares the `thinking`
-      # capability — see ANALYSIS.md.
+      # phi4-reasoning always emits <think>...</think> — there is no off
+      # switch. Force think:true so Ollama parses the tags into the
+      # thinking field instead of leaving them in the visible content.
+      # Requires the stock Modelfile to be rebuilt to declare the
+      # `thinking` capability; otherwise the parse doesn't happen.
       think: true
 
   - model_name: capable
@@ -64,10 +68,10 @@ model_list:
       api_base: http://host.docker.internal:11434
       num_ctx: 40960
 
-  # `efficient` (lfm2:24b) is the primary 20B-class default — 6.8× faster
-  # than `capable-large` (gpt-oss:20b) on the speed benchmark. Use
-  # `capable-large` only when you specifically want gpt-oss's
-  # reasoning-channel chain-of-thought.
+  # `efficient` (lfm2:24b) is the primary 20B-class default. It beat
+  # `capable-large` (gpt-oss:20b) 6.8x on the same prompts in the speed
+  # benchmark. Reach for `capable-large` only when you specifically want
+  # gpt-oss's reasoning-channel chain-of-thought.
   - model_name: efficient
     litellm_params:
       model: ollama_chat/lfm2:24b
@@ -84,8 +88,8 @@ model_list:
     litellm_params:
       model: ollama_chat/qwen3.6:35b-mlx
       api_base: http://host.docker.internal:11434
-      # Same backing model as `general`. Alias kept distinct so vision-tagged
-      # traffic stays separable in observability tooling.
+      # Same backing model as `general`. The two aliases are kept
+      # distinct so vision-tagged traffic stays separable in Langfuse.
       num_ctx: 65536
 
   - model_name: instruct

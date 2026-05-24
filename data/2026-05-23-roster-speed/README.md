@@ -1,31 +1,35 @@
-# Run 1 — Original 10-model production-default speed test (2026-05-23)
+# Run 1 — production defaults, 10 models (2026-05-23)
 
-First run in the series. The roster as it stood on 2026-05-23 morning, each model at its production-default `num_ctx` and `num_predict`.
+First run in the series. The roster as I was actually shipping it that morning, each model at the `num_ctx` and `num_predict` baked into my Pi and Hermes configs.
+
+The point of this one was sanity-checking what I'd assumed. It turned into the run that broke most of those assumptions.
 
 ## Files
 
-- **`results.json`** — raw per-call results. One object per (model, prompt). Fields: `alias`, `tag`, `prompt`, `num_ctx`, `num_predict`, `wall_s`, `eval_tps`, `eval_count`, `thinking_chars`, `content` (first 300 chars), `error`.
-- **`run.log`** — full stdout (warmup times, per-prompt progress).
-- **`report.md`** — formatted markdown tables + findings.
+- `results.json` — one object per (model, prompt). Fields documented in the top-level README.
+- `run.log` — full stdout, including warmup times and per-prompt progress.
+- `report.md` — the markdown tables I generated and pasted into my vault note.
 
-## Configuration
+## Setup
 
 - 10 models × 8 prompts = 80 calls
-- Sequential per model (cold-load tax on prompt 1 only)
-- Direct Ollama at `:11434` (not through LiteLLM) for accurate `eval_count` / `eval_duration` and the separated `thinking` channel
+- Sequential per model so the cold-load tax falls on prompt 1 only
+- Direct to Ollama at `:11434`, not via LiteLLM (need the raw `eval_count` / `eval_duration` and the separated `thinking` field)
 - Total wall time: **107 minutes**
 
-## How to reproduce
+## To reproduce
 
 ```bash
 python3 ../../scripts/roster_speed_test.py
 ```
 
-Note: this run's MODELS list included `qwen3.5:9b-mlx` and `qwen3-vl:30b`, both of which were retired after the delta run. To reproduce against the *historical* roster you'd need to `ollama pull` those tags first.
+This run's model list included `qwen3.5:9b-mlx` and `qwen3-vl:30b`. Both got retired after the delta run, so if you want to actually re-run *this* exact matrix you'll need to `ollama pull` them first.
 
-## Notable findings (full prose in `report.md`)
+## What surprised me
 
-- `qwen3.5:9b-mlx` over-thinks at production budget — 30k chars of thinking on a 60-word writing task, timed out on the French-translation prompt.
-- `qwen3-vl:30b` was the speed surprise — 36 tps median on text-only prompts, faster than every other general-purpose model.
-- `phi4-reasoning:plus` is slow + careful — 9 tps median, 34k chars of thinking on a JSON-list prompt (15 min wall time).
-- `gemma4:e4b-mlx` emits thinking unsolicited even when not asked; the previous "fast-general" alias wasn't actually fast.
+- **`qwen3.5:9b-mlx` over-thinks at the budget I'd given it.** 30k chars of thinking on a 60-word writing prompt. Timed out on a French translation. The `think:false` fix later turned it from broken into merely slow, but that's enough to demote it.
+- **`qwen3-vl:30b` is 36 tps on text-only prompts.** Faster than every general-purpose model in the roster, despite being a 30B vision-tuned model. The MoE architecture noticed the parameter count less than I did.
+- **`phi4-reasoning:plus` is slow and exhaustive.** 9 tps median, 34k chars of thinking on a JSON-list prompt (15 minutes wall time). The model isn't wrong. My expectation was.
+- **`gemma4:e4b-mlx` ships with thinking on by default**, which I hadn't noticed. The "fast general" alias wasn't actually fast until I forced it off in the LiteLLM route.
+
+The numbers behind each of those are in `report.md` and `results.json`.

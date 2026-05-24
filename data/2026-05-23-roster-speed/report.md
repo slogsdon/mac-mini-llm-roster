@@ -1,11 +1,11 @@
 
-## Speed Benchmark — All Roles × All Prompts (2026-05-23)
+## Speed benchmark — all 10 models, all 8 prompts (2026-05-23)
 
-> 8 prompts × 10 models = 80 calls, ran sequentially per model (one cold load per model). Total wall time ~107 min.
+> 80 calls total, sequential per model so the cold-load tax only hits prompt 1. About 107 minutes wall time on a 32 GB M4 Mini.
 >
-> Hits Ollama directly at :11434 (not through LiteLLM) so we capture the `thinking` channel and accurate `eval_count` / `eval_duration` for tokens/sec. Each model uses **its production defaults**: `num_ctx` = isolated-mode value from `models.yaml`, `num_predict` = Pi `maxTokens`. Thinking models with `think:true` separate thought from answer.
+> Direct to Ollama on `:11434` — not via LiteLLM. I need the raw `eval_count` / `eval_duration` for honest tokens/sec, plus the separated `thinking` field that LiteLLM doesn't pass through cleanly. Each model uses the `num_ctx` and `num_predict` I was actually shipping (isolated-mode default from `models.yaml`, Pi `maxTokens`).
 >
-> Script: `~/Code/otel-local-ai/scripts/roster_speed_test.py`. Raw results: `/tmp/roster_speed_results.json`.
+> Script: `scripts/roster_speed_test.py`. Raw data: `results.json` next to this file.
 
 ### Prompts
 
@@ -95,39 +95,25 @@
 | flash | `1.  Start with 47 apples. \\ 2.  Subtract the 23 sold: $47 - 23 = 24$ apples rem` |
 | vision | `The store starts with **47 apples**. \\  \\ 1. **Subtract the sold apples**:   \` |
 
-### Findings & recommendations
+### What I took away
 
-**1. `vision` (qwen3-vl:30b) is the speed surprise — 36 tps median.**
-Faster than every model except `code-autocomplete`. Beats `general` (qwen3.5:9b-mlx, 16 tps) by 2.2× and `writing` (mistral-nemo:12b, 11 tps) by 3.2× *despite being 30B parameters*. Output quality on math, code, and translation is on par with the dedicated models. **Worth considering as a general-chat default when vision isn't needed** — the only cost is the 19 GB memory footprint (which already excludes it from concurrent loading anyway).
+**`vision` (qwen3-vl:30b) was the speed surprise — 36 tps median.** Faster than every model in the roster except `code-autocomplete`. 2.2× faster than the `general` I was shipping (qwen3.5:9b-mlx at 16 tps), 3.2× faster than `writing` (mistral-nemo:12b at 11 tps), and it's a 30B vision-tuned model. Output quality on math, code, and translation tracked the dedicated models. The 19 GB footprint already excludes it from concurrent loading, so the only real cost of using it for text was that I hadn't been.
 
-**2. `capable-large` (gpt-oss:20b) is the well-rounded performer — 25 tps.**
-Faster than `capable` (qwen3:14b, 11 tps) AND `writing` AND `general`, with the lowest thinking overhead of any reasoning model (median 542 chars vs 1k+ for the qwen3 family). The role label "when 14B isn't enough" undersells it — it's also faster and more concise than 14B.
+**`capable-large` (gpt-oss:20b) at 25 tps was the well-rounded performer.** Faster than `capable` (qwen3:14b, 11 tps), `writing`, and `general`, with the lowest thinking overhead of any reasoning model in the matrix — median 542 chars vs 1k+ for the qwen3 family. The role label "when 14B isn't enough" undersold it; it's also faster and more concise than 14B.
 
-**3. `general` (qwen3.5:9b-mlx) over-thinks at production budgets.**
-- 30k chars of thinking on a 60-word writing prompt (10.5 min)
-- 14k chars of thinking on a one-sentence summary (3.4 min)
-- **Timed out (>15 min) on the French translation** — only timeout in the whole matrix
-The "fast reasoning" claim in the role label is inaccurate at `max_tokens=32768`. **Recommend either swapping the default for `vision` or `capable-large`, or forcing `think:false` (or `low` reasoning effort) in Pi/Hermes for the `general` route.**
+**`general` (qwen3.5:9b-mlx) over-thinks at production budgets.** 30k chars of thinking on a 60-word writing prompt (10.5 min). 14k chars on a one-sentence summary (3.4 min). Timed out at >15 min on the French translation — the only timeout in the whole matrix. The "fast reasoning" claim on the role label was wrong at `max_tokens=32768`. Either swap the default or force `think:false` in the route.
 
-**4. `reasoning` (phi4-reasoning:plus) is for genuinely hard problems only.**
-9 tps median, 34k chars of thinking on the *JSON-list* prompt alone (14.8 min). Phi4 has no "off" for thinking — it always reasons exhaustively. Total wall time for 8 trivial prompts: 45 minutes. **Use it for multi-step math/planning where you'd happily wait 15 min for a careful answer. Don't use it as a back-pocket default.**
+**`reasoning` (phi4-reasoning:plus) is for genuinely hard problems only.** 9 tps median, 34k chars of thinking on the JSON-list prompt alone (14.8 min). Phi4 has no off switch for thinking; it always reasons exhaustively. Total wall for 8 trivial prompts: 45 minutes. Use it where you'd happily wait 15 minutes for a careful answer, not as a back-pocket default.
 
-**5. `fast-general` (gemma4:e4b-mlx) is not actually fast for an "instant Q&A" role.**
-29 tps, but emits 200-2000 chars of thinking on most prompts (including trivial ones). Code-task burned its 16K budget thinking and returned **empty content**. The `e4b-mlx` template has thinking baked in even though I didn't pass `think:true`. **Either swap for a non-thinking small model, or override thinking off in clients.**
+**`fast-general` (gemma4:e4b-mlx) isn't actually fast for the instant-Q&A role.** 29 tps, but it emits 200–2000 chars of thinking on most prompts including trivial ones. code-task burned its 16K budget thinking and returned empty content. The `e4b-mlx` template has thinking baked in even though I didn't pass `think:true`. Force it off in the client or swap for a true non-thinking small model.
 
-**6. `flash` (glm-4.7-flash:q4_K_M) underdelivers for its 19 GB footprint.**
-16 tps median — slower than `capable-large` (25 tps) and `vision` (36 tps), both of which are bigger. Always-isolated due to size. The multilingual prompt wasn't noticeably better than smaller models'. **Hard to justify keeping in the active roster unless you're specifically using it for very-large-context Chinese content.**
+**`flash` (glm-4.7-flash:q4_K_M) doesn't earn its 19 GB.** 16 tps median, slower than `capable-large` (25 tps) and `vision` (36 tps) — both of which are bigger. The multilingual prompt wasn't noticeably better than smaller models'. Hard to justify keeping unless you specifically need it for very-large-context Chinese content.
 
-**7. `code-autocomplete`, `code-review`, `writing` perform well within their roles.**
-- `code-autocomplete`: 47 tps median, 95 tps on trivial prompts. Role fit confirmed.
-- `code-review` (granite4.1): 18 tps, no thinking overhead, clean structured JSON on first try. Role fit confirmed.
-- `writing` (mistral-nemo:12b): 11 tps with clean output. Slow but no surprises.
+**`code-autocomplete`, `code-review`, and `writing` performed inside their roles.** code-autocomplete: 47 tps median, 95 on trivial prompts. code-review (granite4.1): 18 tps, no thinking overhead, clean structured JSON first try. writing (mistral-nemo:12b): 11 tps with clean output. Slow but no surprises.
 
-**8. Output quality is broadly uniform on simple tasks.**
-Every model got 42 right on math-reason. The base model (`code-autocomplete`) wandered into commentary before reaching 42, as expected for a non-instruction-tuned model. No model produced *wrong* answers on math.
+**Output quality was uniform on simple tasks.** Every model got 42 right on math-reason. The base model (`code-autocomplete`) wandered into commentary before getting there, which is what a non-instruction-tuned base model does. No model produced wrong math.
 
-**9. Thinking models hit their budget caps on trivial prompts.**
-Three different models returned empty `content` when they exhausted `num_predict` mid-thinking: `fast-general` on code-task, `general` on multilingual (timeout), and budget-exhaustion symptoms across the qwen3 family. **Operationally: cap thinking token counts in client requests, not just total `max_tokens`.**
+**Thinking models hit budget caps on trivial prompts.** Three returned empty `content` when they exhausted `num_predict` mid-think: `fast-general` on code-task, `general` on multilingual (the timeout), and a recurring pattern across the qwen3 family. Operational note: cap thinking tokens in client requests, not just total `max_tokens`.
 
 ### Proposed roster adjustments
 

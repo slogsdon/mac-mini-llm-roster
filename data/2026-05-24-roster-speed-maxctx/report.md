@@ -1,11 +1,11 @@
 
-## Max-Context Speed Benchmark — Final Roster (2026-05-24)
+## Max-context speed benchmark — final roster (2026-05-24)
 
-> Third and final benchmark in this series. Same 8 prompts, same script (`roster_speed_test_maxctx.py`). 11 models, each at its `ollama_max` from `models.yaml` (the model card's training-time max). Exception: `writing` capped at 131K — its 1M ceiling is unrealistic on a 32 GB host. `num_predict` unchanged from production.
+> Third and final run in the series. Same 8 prompts, same harness (`roster_speed_test_maxctx.py`). 11 models, each pinned to its `ollama_max` from `models.yaml` — the value the model card publishes as its training-time ceiling. Exception: `writing` is capped at 131K because mistral-nemo's 1M ceiling won't fit on a 32 GB host. `num_predict` unchanged from production.
 >
 > Total wall time: **69.5 min** (vs 107 min for the first run at production defaults).
 >
-> Raw results: `~/Code/otel-local-ai/benchmarks/2026-05-24-roster-speed-maxctx/results.json`.
+> Raw data: `results.json` next to this file.
 
 ### Models in this run (with `num_ctx` actually used)
 
