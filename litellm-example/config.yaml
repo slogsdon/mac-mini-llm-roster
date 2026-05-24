@@ -1,0 +1,108 @@
+# Minimal LiteLLM proxy config demonstrating the role-alias pattern.
+#
+# This is a sanitized version of the config used for the benchmarks in
+# ../data/. The real config also runs OTel + Langfuse callbacks; those
+# are omitted here because they're orthogonal to the routing pattern.
+#
+# The key idea: every alias is a *config bundle* — model tag + context
+# window + thinking setting + any other per-model overrides. Clients
+# request the alias; the proxy applies the bundle. Swap models without
+# touching client code.
+#
+# Run with the LiteLLM proxy: https://docs.litellm.ai/docs/simple_proxy
+
+model_list:
+  - model_name: code-autocomplete
+    litellm_params:
+      model: ollama/qwen2.5-coder:3b-base
+      api_base: http://host.docker.internal:11434
+      num_ctx: 32768
+
+  - model_name: fast-general
+    litellm_params:
+      model: ollama_chat/gemma4:e4b-mlx
+      api_base: http://host.docker.internal:11434
+      num_ctx: 65536
+      # gemma4's template emits a <think> channel even on trivial prompts —
+      # burns the entire num_predict budget on internal monolog and returns
+      # empty content. Force off so this alias actually behaves "fast".
+      think: false
+
+  - model_name: code-review
+    litellm_params:
+      model: ollama_chat/granite4.1:8b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 65536
+
+  - model_name: general
+    litellm_params:
+      model: ollama_chat/qwen3.6:35b-mlx
+      api_base: http://host.docker.internal:11434
+      # 35B MLX MoE — doubles as the `vision` alias.
+      num_ctx: 65536
+
+  - model_name: writing
+    litellm_params:
+      model: ollama_chat/mistral-nemo:12b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 131072
+
+  - model_name: reasoning
+    litellm_params:
+      model: ollama_chat/phi4-reasoning:plus
+      api_base: http://host.docker.internal:11434
+      num_ctx: 32768
+      # phi4-reasoning always emits <think>...</think>. Force think:true so
+      # Ollama parses them into the thinking field instead of the content
+      # channel. Requires a rebuilt Modelfile that declares the `thinking`
+      # capability — see ANALYSIS.md.
+      think: true
+
+  - model_name: capable
+    litellm_params:
+      model: ollama_chat/qwen3:14b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 40960
+
+  # `efficient` (lfm2:24b) is the primary 20B-class default — 6.8× faster
+  # than `capable-large` (gpt-oss:20b) on the speed benchmark. Use
+  # `capable-large` only when you specifically want gpt-oss's
+  # reasoning-channel chain-of-thought.
+  - model_name: efficient
+    litellm_params:
+      model: ollama_chat/lfm2:24b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 32768
+
+  - model_name: capable-large
+    litellm_params:
+      model: ollama_chat/gpt-oss:20b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 65536
+
+  - model_name: vision
+    litellm_params:
+      model: ollama_chat/qwen3.6:35b-mlx
+      api_base: http://host.docker.internal:11434
+      # Same backing model as `general`. Alias kept distinct so vision-tagged
+      # traffic stays separable in observability tooling.
+      num_ctx: 65536
+
+  - model_name: instruct
+    litellm_params:
+      model: ollama_chat/ministral-3:14b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 40960
+
+  - model_name: tiny-reason
+    litellm_params:
+      model: ollama_chat/lfm2.5-thinking:1.2b
+      api_base: http://host.docker.internal:11434
+      num_ctx: 32768
+      think: true
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY

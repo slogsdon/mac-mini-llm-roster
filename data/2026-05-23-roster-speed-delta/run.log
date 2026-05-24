@@ -1,0 +1,71 @@
+Running delta subset: ['efficient', 'fast-general', 'general', 'general-next', 'instruct', 'tiny-reason']
+
+=== fast-general (gemma4:e4b-mlx)  num_ctx=64K  num_predict=16384 ===
+  warmup: 3.8s ok
+  fim-code              6.0s    28.2 tps  ec= 163  '```python\ndef fibonacci(n):\n    """\n    Calculates'
+  quick-qa              0.2s    28.6 tps  ec=   1  'Paris'
+  structured-json       1.9s    28.1 tps  ec=  48  '[\n  "Excessive use of global variables",\n  "Ignori'
+  math-reason           2.3s    28.0 tps  ec=  57  'Here is the breakdown:\n\n**Start:** 47 apples\n**Sol'
+  writing-blurb         2.0s    27.8 tps  ec=  50  'Experience comfort and productivity with our wirel'
+  code-task            25.3s    27.4 tps  ec= 688  '```python\nimport heapq\n\ndef kth_largest(arr: list['
+  multilingual         10.0s    28.0 tps  ec= 273  'Here are a few ways to translate "I went to the ma'
+  summarize             1.1s    28.1 tps  ec=  24  'This text includes a classic pangram, a simple des'
+
+=== general (qwen3.5:9b-mlx)  num_ctx=128K  num_predict=32768 ===
+  warmup: 4.6s ok
+  fim-code              6.6s    15.7 tps  ec=  97  'The `fibonacci` function needs to compute the $n$-'
+  quick-qa              0.4s    15.7 tps  ec=   1  'Paris'
+  structured-json       4.1s    15.8 tps  ec=  58  '[\n"Using \'is\' to check for non-singleton types ins'
+  math-reason           7.7s    15.9 tps  ec= 114  'To find the number of apples currently in the stor'
+  writing-blurb         4.7s    16.1 tps  ec=  70  'Recharge your workspace with our wireless ergonomi'
+  code-task            28.7s    16.1 tps  ec= 455  '```python\ndef kth_largest(arr, k):\n    """\n    Ret'
+  multilingual          1.3s    16.4 tps  ec=  16  "Je suis allé(e) au marché et j'ai acheté du pain f"
+  summarize             1.9s    15.9 tps  ec=  23  'The text states that a fox and cat perform specifi'
+
+=== general-next (qwen3.6:35b-mlx)  num_ctx=64K  num_predict=16384 ===
+  warmup: 9.6s ok
+  fim-code             27.5s    35.0 tps  ec= 951 [+2875c think]  'Here is the completed function using standard recu'
+  quick-qa              3.5s    35.1 tps  ec= 113 [+443c think]  'Paris'
+  structured-json      22.3s    34.8 tps  ec= 768 [+2979c think]  '["Mutable default arguments", "Using bare except c'
+  math-reason          11.7s    34.9 tps  ec= 397 [+931c think]  '**Work:**\n47 (initial) − 23 (sold) = 24  \n24 + 18 '
+  writing-blurb        48.8s    34.9 tps  ec=1694 [+5081c think]  'Experience effortless typing with our wireless erg'
+  code-task           115.0s    34.4 tps  ec=3941 [+14367c think]  "Here's a clean, production-ready implementation wi"
+  multilingual         28.1s    34.5 tps  ec= 960 [+3632c think]  "**Je suis allé au marché et j'ai acheté du pain fr"
+  summarize            45.0s    34.6 tps  ec=1541 [+6493c think]  'The passage briefly depicts a fox leaping over a d'
+
+=== instruct (ministral-3:14b)  num_ctx=40K  num_predict=16384 ===
+  warmup: 9.6s ok
+  fim-code             14.2s    12.7 tps  ec= 176  "Here's the completed Python function for the Fibon"
+  quick-qa              0.4s    24.9 tps  ec=   2  'Paris'
+  structured-json       6.0s    12.7 tps  ec=  72  '```json\n[\n    "Using mutable default arguments in '
+  math-reason           6.7s    12.7 tps  ec=  78  "Let's calculate the number of apples step by step:"
+  writing-blurb         9.7s    12.6 tps  ec= 117  '**Wireless Ergonomic Keyboard – Effortless Typing,'
+  code-task            61.5s    12.6 tps  ec= 769  "Here's a Python function `kth_largest(arr, k)` tha"
+  multilingual          4.8s    12.6 tps  ec=  56  'Voici la traduction en français :\n\n**"Je suis allé'
+  summarize             4.0s    12.8 tps  ec=  43  '*"A quick brown fox leaps over a lazy dog while a '
+
+=== efficient (lfm2:24b)  num_ctx=32K  num_predict=16384 ===
+  warmup: 6.1s ok
+  fim-code              3.8s    55.0 tps  ec= 187  'Certainly! The Fibonacci sequence is a series wher'
+  quick-qa              0.2s   106.9 tps  ec=   2  'Paris'
+  structured-json       0.8s    51.0 tps  ec=  22  '["Using global variables excessively", "Not handli'
+  math-reason           1.6s    56.3 tps  ec=  68  'To find the number of apples remaining:\n\n1. **Init'
+  writing-blurb         2.0s    54.4 tps  ec=  93  'Experience ultimate comfort with our wireless ergo'
+  code-task             8.8s    50.5 tps  ec= 422  '```python\ndef kth_largest(arr, k):\n    """\n    Ret'
+  multilingual          0.5s    59.2 tps  ec=  16  "Je suis allé au marché et j'ai acheté du pain frai"
+  summarize             0.9s    57.0 tps  ec=  26  'A quick brown fox jumps over a lazy dog while a ca'
+
+=== tiny-reason (lfm2.5-thinking:1.2b)  num_ctx=32K  num_predict=8192 ===
+  warmup: 0.9s ok
+  fim-code             20.3s   114.4 tps  ec=2284 [+8235c think]  'To complete the function, we need to handle the ba'
+  quick-qa              2.4s   118.8 tps  ec= 272 [+783c think]  'Paris\n\nWait, wait, wait. Wait, the user said "Repl'
+  structured-json       6.5s   116.1 tps  ec= 733 [+3070c think]  '[ "Global Variables", "Deep Nesting", "Code Duplic'
+  math-reason           3.5s   116.0 tps  ec= 388 [+1044c think]  'The store starts with 47 apples. After selling 23,'
+  writing-blurb        73.8s   112.4 tps  ec=8192 [+30162c think]  ''
+  code-task            11.3s   116.6 tps  ec=1296 [+4358c think]  '```python\ndef kth_largest(arr, k):\n    """Returns '
+  multilingual         17.1s   116.7 tps  ec=1969 [+6458c think]  "Je suis allé(e) au marché et j'ai acheté du pain f"
+  summarize             8.3s   116.2 tps  ec= 940 [+4064c think]  'The quick brown fox jumps over the lazy dog, the c'
+
+
+Total wall time: 11.8 minutes (710s)
+Saved: /tmp/roster_delta_results.json

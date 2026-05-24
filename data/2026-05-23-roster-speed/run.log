@@ -1,0 +1,114 @@
+
+=== code-autocomplete (qwen2.5-coder:3b-base)  num_ctx=32K  num_predict=8192 ===
+  warmup: 1.6s ok
+  fim-code             12.0s    46.3 tps  ec= 544  '2 * fibonacci(n - 1) + (n // 3)\n\n#This is a contin'
+  quick-qa              0.1s    95.2 tps  ec=   2  'Paris'
+  structured-json       0.8s    49.3 tps  ec=  31  '[\n    "Using global variables extensively",\n    "L'
+  math-reason          39.5s    46.6 tps  ec=1809  'To find out how many apples the store has after se'
+  writing-blurb         1.8s    48.1 tps  ec=  80  'This item is designed to provide comfort and effic'
+  code-task             6.1s    47.4 tps  ec= 281  'Certainly! Below is the definition of the `kth_lar'
+  multilingual          1.0s    49.2 tps  ec=  41  "J'ai marché à l'épicier et j'ai acheté du pain fra"
+  summarize             0.7s    50.0 tps  ec=  26  'My text summarization is... "A classic English phr'
+
+=== fast-general (gemma4:e4b-mlx)  num_ctx=64K  num_predict=16384 ===
+  warmup: 5.8s ok
+  fim-code             29.5s    28.9 tps  ec= 846 [+1726c think]  '**Completion using Recursion:**\n\nThis method direc'
+  quick-qa              0.3s    28.1 tps  ec=   1  'Paris'
+  structured-json      12.7s    28.9 tps  ec= 360 [+1267c think]  '```json\n[\n    "Mutable default arguments",\n    "Wr'
+  math-reason           5.2s    28.7 tps  ec= 142 [+236c think]  '**Work:**\n* Start: 47 apples\n* Sold: $47 - 23 = 24'
+  writing-blurb         7.1s    29.1 tps  ec= 200 [+530c think]  'Upgrade your workspace with ultimate comfort and p'
+  code-task            50.5s    29.1 tps  ec=1463 [+2479c think]  'This task can be solved efficiently by sorting the'
+  multilingual         19.0s    29.2 tps  ec= 549 [+1689c think]  'The most common and natural translation is:\n\n**Je '
+  summarize             9.0s    29.0 tps  ec= 253 [+529c think]  'Here are a few ways to summarize it, depending on '
+
+=== code-review (granite4.1:8b)  num_ctx=64K  num_predict=16384 ===
+  warmup: 4.0s ok
+  fim-code             24.0s    17.8 tps  ec= 421  'To complete the `fibonacci` function that returns '
+  quick-qa              0.3s    35.9 tps  ec=   2  'Paris'
+  structured-json       1.7s    18.1 tps  ec=  26  '```json\n["Using mutable default arguments", "Overu'
+  math-reason           3.9s    17.8 tps  ec=  61  'Start with the initial number of apples: 47  \nSubt'
+  writing-blurb         4.7s    17.7 tps  ec=  78  'Introducing the sleek, wireless ergonomic keyboard'
+  code-task             8.2s    17.6 tps  ec= 135  "Here's how you can implement this:\n\n```python\ndef "
+  multilingual          1.1s    18.5 tps  ec=  16  "J'ai marché au marché et j'ai acheté du pain frais"
+  summarize             2.5s    17.6 tps  ec=  35  'A quick brown fox leaps over a lazy dog, while a c'
+
+=== general (qwen3.5:9b-mlx)  num_ctx=128K  num_predict=32768 ===
+  warmup: 3.1s ok
+  fim-code             20.7s    16.3 tps  ec= 330 [+616c think]  '```python\ndef fibonacci(n):\n    if n <= 1:\n       '
+  quick-qa             10.0s    16.3 tps  ec= 158 [+554c think]  'Paris'
+  structured-json      58.2s    16.5 tps  ec= 953 [+3735c think]  '["Using mutable default arguments in function defi'
+  math-reason          33.5s    16.4 tps  ec= 543 [+1206c think]  'Here is the calculation:\n\n1.  Start with **47** ap'
+  writing-blurb       627.6s    15.3 tps  ec=9612 [+30362c think]  'Elevate your workspace with our premium wireless e'
+  code-task            35.2s    15.2 tps  ec= 528 [+607c think]  '```python\ndef kth_largest(arr, k):\n    """\n    Fin'
+  multilingual       ERR  TimeoutError: timed out
+  summarize           203.0s    16.1 tps  ec=3262 [+14003c think]  'The text details three separate statements about a'
+
+=== writing (mistral-nemo:12b)  num_ctx=128K  num_predict=32768 ===
+  warmup: 6.8s ok
+  fim-code             16.0s    11.2 tps  ec= 168  'fibonacci(n-1) + fibonacci(n-2)\n\nThis function use'
+  quick-qa              0.7s    23.0 tps  ec=   2  'Paris'
+  structured-json       3.9s    11.1 tps  ec=  34  '["Using Global Variables Without Necessity", "Unne'
+  math-reason           8.7s    11.0 tps  ec=  77  "Let's calculate this step-by-step:\n\n1. Start with "
+  writing-blurb         5.8s    11.4 tps  ec=  58  'Our wireless ergonomic keyboard ensures comfort an'
+  code-task            29.5s    11.5 tps  ec= 326  "Here's a Python function named `kth_largest` which"
+  multilingual          6.1s    11.4 tps  ec=  63  'In French, your sentence translates to:\n\n "Je suis'
+  summarize             4.9s    11.5 tps  ec=  37  '"In a scenario where a swift fox leaps over a loun'
+
+=== reasoning (phi4-reasoning:plus)  num_ctx=32K  num_predict=16384 ===
+  warmup: 8.8s ok
+  fim-code            196.4s     9.1 tps  ec=1786 [+6824c think]  'One common way to complete the function is by usin'
+  quick-qa             28.4s     9.2 tps  ec= 257 [+1172c think]  'Paris'
+  structured-json     886.7s     8.4 tps  ec=7393 [+34954c think]  '[\n  "Mutable Default Arguments",\n  "Global Variabl'
+  math-reason          56.8s     8.9 tps  ec= 500 [+1829c think]  'Start with 47 apples.\nAfter selling 23, you have 4'
+  writing-blurb       792.0s     8.3 tps  ec=6539 [+26095c think]  'Experience ultimate typing comfort with our wirele'
+  code-task           169.4s     9.0 tps  ec=1525 [+5549c think]  'def kth_largest(arr, k):\n    """\n    Returns the k'
+  multilingual        143.6s     9.1 tps  ec=1297 [+4760c think]  'La traduction française est : Je suis allé(e) au m'
+  summarize           425.4s     8.8 tps  ec=3741 [+17237c think]  'In one scene, a nimble brown fox jumps over a lazy'
+
+=== capable (qwen3:14b)  num_ctx=40K  num_predict=16384 ===
+  warmup: 4.7s ok
+  fim-code             68.5s    11.3 tps  ec= 767 [+1658c think]  'To complete the given Python function for computin'
+  quick-qa             10.9s    11.1 tps  ec= 117 [+513c think]  'Paris'
+  structured-json      32.1s    11.1 tps  ec= 351 [+1563c think]  '["Using mutable default arguments", "Using for loo'
+  math-reason          33.0s    11.1 tps  ec= 359 [+786c think]  'The store starts with 47 apples. After selling 23:'
+  writing-blurb        38.1s    11.1 tps  ec= 419 [+1608c think]  'Experience unparalleled comfort with our wireless '
+  code-task           286.3s    10.5 tps  ec=2994 [+10198c think]  'To solve the problem of finding the **kth largest '
+  multilingual         59.6s    10.5 tps  ec= 621 [+2490c think]  "Je suis allé au marché et j'ai acheté du pain frai"
+  summarize            23.7s    10.6 tps  ec= 244 [+913c think]  'The quick brown fox jumps over the lazy dog, the c'
+
+=== capable-large (gpt-oss:20b)  num_ctx=64K  num_predict=16384 ===
+  warmup: 6.2s ok
+  fim-code             11.2s    25.2 tps  ec= 271 [+667c think]  'Here’s a straightforward recursive implementation:'
+  quick-qa              1.7s    26.0 tps  ec=  36 [+102c think]  'Paris'
+  structured-json       3.9s    25.6 tps  ec=  87 [+279c think]  '["Using global variables excessively", "Mutating f'
+  math-reason           6.1s    24.7 tps  ec= 139 [+151c think]  '**Step 1 – Start with the initial number of apples'
+  writing-blurb        54.0s    25.2 tps  ec=1344 [+4291c think]  'Experience seamless typing with the AirFlex Wirele'
+  code-task            28.6s    25.2 tps  ec= 704 [+409c think]  '```python\nimport random\nfrom typing import List, A'
+  multilingual          9.0s    25.2 tps  ec= 216 [+662c think]  '**French translation:**  \n> Je suis allé\u202fau marché'
+  summarize             7.3s    25.1 tps  ec= 173 [+542c think]  'A quick brown fox leaps over a lazy dog while a ca'
+
+=== flash (glm-4.7-flash:q4_K_M)  num_ctx=128K  num_predict=32768 ===
+  warmup: 16.9s ok
+  fim-code             39.1s    15.8 tps  ec= 542 [+1936c think]  '```python\n    fibonacci(n-1) + fibonacci(n-2)\n```'
+  quick-qa              8.7s    13.2 tps  ec= 101 [+415c think]  'Paris'
+  structured-json      46.8s    13.0 tps  ec= 596 [+2325c think]  '```json\n[\n  "Using mutable default arguments",\n  "'
+  math-reason          39.4s    14.5 tps  ec= 533 [+1398c think]  '1.  Start with 47 apples.\n2.  Subtract the 23 sold'
+  writing-blurb        29.7s    20.1 tps  ec= 575 [+2550c think]  'Experience ultimate comfort and productivity with '
+  code-task            35.9s    19.2 tps  ec= 636 [+1929c think]  '```python\ndef kth_largest(arr, k):\n    """\n    Ret'
+  multilingual         48.0s    19.1 tps  ec= 892 [+3142c think]  "Je suis allé au marché et j'ai acheté du pain frai"
+  summarize            45.7s    15.1 tps  ec= 646 [+2728c think]  'Although the text describes various animals perfor'
+
+=== vision (qwen3-vl:30b)  num_ctx=64K  num_predict=16384 ===
+  warmup: 10.0s ok
+  fim-code             29.2s    35.5 tps  ec=1013 [+3170c think]  'To complete the Fibonacci function, we need to han'
+  quick-qa              4.8s    36.2 tps  ec= 160 [+699c think]  'Paris'
+  structured-json      35.5s    35.3 tps  ec=1229 [+5138c think]  '["Mutable default arguments", "Using \'is\' for valu'
+  math-reason           9.3s    35.5 tps  ec= 305 [+553c think]  'The store starts with **47 apples**.\n\n1. **Subtrac'
+  writing-blurb         9.1s    36.4 tps  ec= 317 [+1038c think]  'Experience pain-free typing with our wireless ergo'
+  code-task           368.7s    26.5 tps  ec=9696 [+35024c think]  'To solve this problem, we need to find the kth lar'
+  multilingual         28.0s    35.8 tps  ec= 983 [+3600c think]  "Je suis allé au marché et j'ai acheté du pain frai"
+  summarize            10.6s    35.8 tps  ec= 350 [+1613c think]  'The quick brown fox jumps over the lazy dog while '
+
+
+Total wall time: 107.2 minutes (6434s)
+Saved: /tmp/roster_speed_results.json
