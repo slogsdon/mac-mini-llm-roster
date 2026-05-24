@@ -1,8 +1,16 @@
 # mac-mini-llm-roster
 
+**Speed benchmarks for local LLMs on a 32 GB Apple Silicon Mac Mini — Ollama, LiteLLM, MLX, MoE.**
+
+Three runs of 8 prompts × 11+ models on a Mac Mini M4 (32 GB unified memory): tokens-per-second, wall-clock, output quality, thinking-channel overhead. Covers Qwen 3 / 3.5 / 3.6, gpt-oss, phi4-reasoning, mistral-nemo, gemma4, granite4.1, qwen2.5-coder, ministral-3, lfm2 / lfm2.5, glm-4.7-flash, qwen3-vl. Production-default vs maxed-context comparisons.
+
 > Companion repo for the blog post **"What I Learned Running Every Local Model on a 32 GB Mac Mini"** (link forthcoming). This repo holds the benchmark scripts and the raw data behind the post's tables and findings.
 
 This is a **downstream complement to [willitrunai.com](https://www.willitrunai.com), not a replacement.** willitrunai answers *"will this model fit on my Mac SKU?"* — the right first filter, and a tool I rely on. This repo and the blog post answer the next question: *"given it fits, how does it actually behave on real prompts at production settings?"*
+
+### Keywords (for the search engines)
+
+`ollama`, `litellm`, `local-llm`, `apple-silicon`, `mac-mini`, `m4`, `mlx`, `mixture-of-experts`, `qwen3`, `phi4-reasoning`, `lfm2`, `gpt-oss`, `mistral-nemo`, `gemma`, `granite`, `benchmark`, `tokens-per-second`, `kv-cache`, `thinking-channel`, `langfuse`, `role-aliases`
 
 ## What's in here
 
