@@ -1,6 +1,6 @@
 # mac-mini-llm-roster
 
-Three benchmark runs of every local model I bothered to download, on one Mac Mini M4 with 32 GB of unified memory. Scripts, raw JSON, run logs, and the markdown tables that came out of them.
+Six benchmark runs of every local model I bothered to download, on one Mac Mini M4 with 32 GB of unified memory. Scripts, raw JSON, run logs, and the markdown tables that came out of them.
 
 If [willitrunai.com](https://www.willitrunai.com) told you a model will fit on your Mac, this is the next question: *given it fits, does it actually behave at the contexts and budgets you'd run it at?* For most of the models in here, the answer was a surprise — usually not in the direction the model card implied.
 
@@ -15,14 +15,17 @@ scripts/
                                 ollama_max
 data/
   2026-05-23-roster-speed/        Run 1: 10 models at the defaults I was shipping
-  2026-05-23-roster-speed-delta/  Run 2: 6 models I needed re-measured after run 1
-  2026-05-24-roster-speed-maxctx/ Run 3: final 11-model roster at maxed contexts
+  2026-05-23-roster-speed-delta/  Run 2: 6 models re-measured with think:false fixes
+  2026-05-24-roster-speed-maxctx/ Run 3: 11-model roster at maxed contexts
+  2026-05-25-roster-additions/    Run 4: deepseek-r1:14b + qwen2.5-coder:14b adds
+  2026-05-26-alias-verification/  Run 5: alias-route verification + dedup audit
+  2026-05-26-pipeline-challenger/ Run 6: lfm2:24b vs mistral-small:24b head-to-head
 litellm-example/
-  config.yaml                   The role-alias pattern I run in production,
-                                sanitized
+  config.yaml                   The use-case-alias pattern I run in production,
+                                with OTel + Langfuse wiring, sanitized
 ```
 
-Each `data/<run>/` folder has the same four files: `results.json` (one row per call), `run.log` (full stdout), `report.md` (tables and the notes I took at the time), and a `README.md` saying what's specific to that run.
+Each `data/<run>/` folder carries `results.json` (one row per call), usually a `run.log` (full stdout), and a `report.md` (tables and the notes I took at the time). Some runs add a `README.md` for run-specific context, and the dedup run adds an `audit.md`.
 
 ## Hardware
 
@@ -43,7 +46,7 @@ One object per (model, prompt) call. The fields that matter:
 
 | field | meaning |
 |---|---|
-| `alias` | the role alias (`general`, `efficient`, etc.) |
+| `alias` | the alias the call was made under (the naming scheme evolved across runs — see each `report.md`) |
 | `tag` | the underlying Ollama tag |
 | `num_ctx` / `num_predict` | what the call was configured with |
 | `wall_s` | total request wall time (load + prompt eval + thinking + generation) |
@@ -72,4 +75,4 @@ MIT. Take the scripts, take the data, tell me where I got it wrong.
 
 ### Keywords for the search engines
 
-`ollama`, `litellm`, `local-llm`, `apple-silicon`, `mac-mini`, `m4`, `mlx`, `mixture-of-experts`, `qwen3`, `phi4-reasoning`, `lfm2`, `gpt-oss`, `mistral-nemo`, `gemma`, `granite`, `benchmark`, `tokens-per-second`, `kv-cache`, `thinking-channel`, `langfuse`, `role-aliases`
+`ollama`, `litellm`, `local-llm`, `apple-silicon`, `mac-mini`, `m4`, `mlx`, `mixture-of-experts`, `qwen3`, `qwen2.5-coder`, `deepseek-r1`, `phi4-reasoning`, `lfm2`, `gpt-oss`, `mistral-small`, `mistral-nemo`, `gemma`, `granite`, `benchmark`, `tokens-per-second`, `kv-cache`, `thinking-channel`, `langfuse`, `otel`, `role-aliases`

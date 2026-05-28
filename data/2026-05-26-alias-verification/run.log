@@ -1,0 +1,38 @@
+Running delta subset: ['code-mid', 'r1-reasoning', 'reasoning']
+
+=== reasoning (phi4-reasoning:plus)  num_ctx=32K  num_predict=16384 ===
+  warmup: 9.9s ok
+  fim-code            174.4s     8.8 tps  ec=1281 [+4983c think]  "Here's one way to complete the function using recu"
+  quick-qa             61.3s     8.9 tps  ec= 283 [+1293c think]  'Paris'
+  structured-json     491.6s     8.5 tps  ec=4154 [+19474c think]  '["Using mutable default arguments", "Overusing glo'
+  math-reason          97.5s     8.8 tps  ec= 587 [+2045c think]  'Start with 47 apples.\n1. After selling 23 apples: '
+  writing-blurb       551.0s     8.4 tps  ec=3973 [+16754c think]  'Experience ultimate comfort with our wireless ergo'
+  code-task           190.6s     8.6 tps  ec=1525 [+5455c think]  'def kth_largest(arr, k):\n    """\n    Returns the k'
+  multilingual        197.2s     8.6 tps  ec=1518 [+6270c think]  '"Je suis allé au marché et j\'ai acheté du pain fra'
+  summarize           222.4s     8.5 tps  ec=1587 [+7412c think]  'The passage depicts animal scenes—a nimble brown f'
+
+=== r1-reasoning (deepseek-r1:14b)  num_ctx=40K  num_predict=16384 ===
+  warmup: 6.0s ok
+  fim-code             77.8s    11.1 tps  ec= 859 [+1672c think]  'To solve this problem, we need to compute the nth '
+  quick-qa             38.2s    11.2 tps  ec= 421 [+2031c think]  'Paris'
+  structured-json      25.4s    11.2 tps  ec= 280 [+1138c think]  '```json\n[\n    "Overusing if-else statements for fl'
+  math-reason          24.7s    11.2 tps  ec= 269 [+400c think]  "**Solution:**\n\nLet's break down the problem step b"
+  writing-blurb        92.1s    11.1 tps  ec=1013 [+4687c think]  'Enhance productivity with our ergonomic wireless k'
+  code-task           127.2s    11.0 tps  ec=1394 [+3916c think]  'To solve this problem, we need to find the kth lar'
+  multilingual         46.8s    11.1 tps  ec= 516 [+1900c think]  'I went to the market and bought fresh bread.\n\nJe s'
+  summarize            20.1s    11.2 tps  ec= 217 [+935c think]  'The text describes a variety of animals, with an e'
+
+=== code-mid (qwen2.5-coder:14b)  num_ctx=64K  num_predict=16384 ===
+  warmup: 5.7s ok
+  fim-code             16.2s    11.3 tps  ec= 179  'To complete the `fibonacci` function, you need to '
+  quick-qa              0.5s    22.6 tps  ec=   2  'Paris'
+  structured-json       2.4s    11.8 tps  ec=  24  '```json\n[\n    "Spaghetti Code",\n    "God Object",\n'
+  math-reason          17.0s    11.3 tps  ec= 185  'To find out how many apples are left in the store '
+  writing-blurb         4.4s    11.5 tps  ec=  46  'Experience ultimate comfort and efficiency with ou'
+  code-task            18.6s    11.2 tps  ec= 201  '```python\ndef kth_largest(arr, k):\n    """\n    Ret'
+  multilingual          1.8s    11.9 tps  ec=  17  "Je suis allé au marché et j'ai acheté du pain frai"
+  summarize             3.8s    11.5 tps  ec=  36  'A quick brown fox jumps over a lazy dog, while a c'
+
+
+Total wall time: 42.1 minutes (2525s)
+Saved: benchmarks/2026-05-26-alias-verification/results.json

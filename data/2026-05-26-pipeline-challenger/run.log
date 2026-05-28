@@ -1,0 +1,27 @@
+Running delta subset: ['pipeline', 'pipeline-challenger']
+
+=== pipeline (lfm2:24b)  num_ctx=32K  num_predict=16384 ===
+  warmup: 6.3s ok
+  fim-code              3.8s    54.6 tps  ec= 188  'Certainly! The Fibonacci sequence is defined such '
+  quick-qa              0.2s   108.2 tps  ec=   2  'Paris'
+  structured-json       0.7s    57.2 tps  ec=  21  '["Using global variables excessively", "Not handli'
+  math-reason           2.0s    54.7 tps  ec=  90  'To find the number of apples remaining:\n\n1. **Star'
+  writing-blurb         1.9s    54.6 tps  ec=  93  'Experience ultimate comfort with our wireless ergo'
+  code-task             7.7s    53.5 tps  ec= 391  '```python\ndef kth_largest(arr, k):\n    """\n    Ret'
+  multilingual          0.5s    57.6 tps  ec=  18  "Je suis allé(e) au marché et j'ai acheté du pain f"
+  summarize             1.0s    56.1 tps  ec=  32  'A quick brown fox jumps over a lazy dog, which sit'
+
+=== pipeline-challenger (mistral-small:24b)  num_ctx=32K  num_predict=16384 ===
+  warmup: 10.8s ok
+  fim-code             46.2s     7.0 tps  ec= 319  'To complete the `fibonacci` function, we need to e'
+  quick-qa              0.7s    13.7 tps  ec=   2  'Paris'
+  structured-json       4.9s     7.3 tps  ec=  32  '```json\n[\n    "\\"Using global variables\\"",\n    "\\'
+  math-reason           9.5s     7.2 tps  ec=  61  'The store starts with 47 apples.\nAfter selling 23 '
+  writing-blurb        11.0s     7.1 tps  ec=  74  'Experience ultimate comfort and convenience with o'
+  code-task            55.2s     7.0 tps  ec= 384  'Certainly! Below is a Python function `kth_largest'
+  multilingual         13.4s     7.1 tps  ec=  91  'The translation of "I went to the market and bough'
+  summarize             5.8s     7.2 tps  ec=  35  'A swift fox leaps over a lazy dog, while a cat rel'
+
+
+Total wall time: 3.0 minutes (182s)
+Saved: benchmarks/2026-05-26-pipeline-challenger/results.json

@@ -1,112 +1,125 @@
-# Minimal LiteLLM proxy config showing the role-alias pattern.
+# LiteLLM proxy config — the single chokepoint in front of the Ollama roster.
 #
-# This is a sanitized version of what runs in front of the Ollama roster
-# in the benchmarks under ../data/. My real config also runs OTel and
-# Langfuse callbacks; both are omitted here because they're orthogonal
-# to the routing.
+# This is a sanitized copy of what I run in production (the benchmarks under
+# ../data/ were measured behind this proxy). Nothing here is a secret: the
+# master key is read from the environment, and the api_base / OTLP hosts are
+# the internal Docker network names this runs on.
 #
-# The whole idea: each alias is a config bundle. Model tag, context
-# window, thinking setting, anything else that's per-model. Clients ask
-# for the alias; the proxy applies the bundle. When a model needs to be
-# swapped or its think setting flipped, it happens here, in one place,
-# without touching any client.
+# The whole idea: each alias is a config bundle — model tag, context window,
+# thinking setting, anything else that's per-model. Callers ask for the alias
+# by job; the proxy applies the bundle. When a model needs to be swapped or
+# its think setting flipped, it happens here, in one place, and no caller
+# changes.
+#
+# Direct Ollama access is no longer permitted — the proxy is the single point
+# for tracing, Langfuse, and cost accounting.
+#
+# Aliases are use-case-oriented. Pick by job:
+#   classify   — cheap structured output, triage, classification
+#   chat       — fast conversational, short-context Q&A
+#   review     — code review, rubric grading, structured eval
+#   code       — primary code generation / refactor / explanation
+#   analyze    — analysis, debugging, judge-pipeline reasoning
+#   pipeline   — automation flows, fast structured tasks, summarization
+#   write      — long-form writing pipeline
+#   quality    — best local quality, long context, complex multi-step
+#
+# num_ctx defaults to each model's isolated-mode ceiling, calibrated against
+# weight + estimated KV cache to stay under ~28 GB combined on a 32 GB host.
+# The values are per-model on purpose: maxing context is nearly free on the
+# MoE / 20B+ models and costs the small dense models 22–54% of their tps.
 #
 # LiteLLM proxy docs: https://docs.litellm.ai/docs/simple_proxy
 
 model_list:
-  - model_name: code-autocomplete
+  - model_name: classify
     litellm_params:
-      model: ollama/qwen2.5-coder:3b-base
+      model: ollama_chat/lfm2.5-thinking:1.2b
       api_base: http://host.docker.internal:11434
-      num_ctx: 32768
+      # Tiny enough that even its 128K model-card max doesn't pressure
+      # memory; tps held at 117 across all 8 prompts in the max-ctx run.
+      num_ctx: 128000
+      think: true
 
-  - model_name: fast-general
+  - model_name: chat
     litellm_params:
       model: ollama_chat/gemma4:e4b-mlx
       api_base: http://host.docker.internal:11434
-      num_ctx: 65536
-      # gemma4's chat template has thinking baked in. If you don't force
-      # it off you'll watch it burn an entire 16K budget on internal
-      # monolog and return empty content. Force off so the alias
-      # actually behaves "fast".
+      # 128K showed no throughput penalty vs 64K on this host, so take the
+      # bigger window for free.
+      num_ctx: 131072
+      # gemma4's chat template has thinking baked in. Without this it burns
+      # the whole budget on internal monolog and returns empty content.
+      # Force off so the alias is actually fast.
       think: false
 
-  - model_name: code-review
+  - model_name: review
     litellm_params:
       model: ollama_chat/granite4.1:8b
       api_base: http://host.docker.internal:11434
+      # Held at 64K: granite4.1 at 128K loses 22% of its throughput
+      # (18 -> 14 tps) on this host. Small dense models pay real money for
+      # big KV caches, and review prompts are short.
       num_ctx: 65536
 
-  - model_name: general
+  - model_name: code
     litellm_params:
-      model: ollama_chat/qwen3.6:35b-mlx
+      model: ollama_chat/qwen2.5-coder:14b
       api_base: http://host.docker.internal:11434
-      # 35B MLX MoE — doubles as the `vision` alias.
+      # 14B dense — held at 64K for the same reason as `review`.
       num_ctx: 65536
 
-  - model_name: writing
+  - model_name: analyze
     litellm_params:
-      model: ollama_chat/mistral-nemo:12b
+      model: ollama_chat/deepseek-r1:14b
       api_base: http://host.docker.internal:11434
-      num_ctx: 131072
-
-  - model_name: reasoning
-    litellm_params:
-      model: ollama_chat/phi4-reasoning:plus
-      api_base: http://host.docker.internal:11434
-      num_ctx: 32768
-      # phi4-reasoning always emits <think>...</think> — there is no off
-      # switch. Force think:true so Ollama parses the tags into the
-      # thinking field instead of leaving them in the visible content.
-      # Requires the stock Modelfile to be rebuilt to declare the
-      # `thinking` capability; otherwise the parse doesn't happen.
-      think: true
-
-  - model_name: capable
-    litellm_params:
-      model: ollama_chat/qwen3:14b
-      api_base: http://host.docker.internal:11434
+      # 14B dense models on this host hate big KV caches, so cap at 40K.
       num_ctx: 40960
+      # No `think: true`. deepseek-r1 emits <think>...</think> inline in the
+      # visible content rather than via a separate thinking field, so
+      # toggling `think` here wouldn't route them to reasoning_content.
 
-  # `efficient` (lfm2:24b) is the primary 20B-class default. It beat
-  # `capable-large` (gpt-oss:20b) 6.8x on the same prompts in the speed
-  # benchmark. Reach for `capable-large` only when you specifically want
-  # gpt-oss's reasoning-channel chain-of-thought.
-  - model_name: efficient
+  # `pipeline` (lfm2:24b) is the primary 20B-class route — 6.8x faster than
+  # `write` (gpt-oss:20b) on the speed benchmark with comparable output
+  # quality. Use `write` only when you specifically want gpt-oss's
+  # reasoning-channel chain-of-thought or longer-form composition.
+  - model_name: pipeline
     litellm_params:
       model: ollama_chat/lfm2:24b
       api_base: http://host.docker.internal:11434
       num_ctx: 32768
 
-  - model_name: capable-large
+  - model_name: write
     litellm_params:
       model: ollama_chat/gpt-oss:20b
       api_base: http://host.docker.internal:11434
-      num_ctx: 65536
+      # Held 26 tps at 128K in the max-ctx benchmark with no penalty vs 64K.
+      num_ctx: 131072
 
-  - model_name: vision
+  - model_name: quality
     litellm_params:
       model: ollama_chat/qwen3.6:35b-mlx
       api_base: http://host.docker.internal:11434
-      # Same backing model as `general`. The two aliases are kept
-      # distinct so vision-tagged traffic stays separable in Langfuse.
-      num_ctx: 65536
-
-  - model_name: instruct
-    litellm_params:
-      model: ollama_chat/ministral-3:14b
-      api_base: http://host.docker.internal:11434
-      num_ctx: 40960
-
-  - model_name: tiny-reason
-    litellm_params:
-      model: ollama_chat/lfm2.5-thinking:1.2b
-      api_base: http://host.docker.internal:11434
-      num_ctx: 32768
-      think: true
+      # 35B MLX MoE; holds 35 tps from 64K all the way to 256K with only a
+      # small cold-load tax. 128K keeps memory headroom without paying for
+      # bigger KV than callers actually use.
+      num_ctx: 131072
 
 litellm_settings:
+  # Observability is the reason the proxy exists. LiteLLM ships every call
+  # two ways at once: the native Langfuse SDK path, and OTLP spans to an
+  # OpenTelemetry collector. Prompts are redacted at the collector before
+  # they touch disk (collector config not included here).
+  success_callback: ["langfuse"]
+  callbacks: ["otel"]
   drop_params: true
+  # Long reasoning generations can take many minutes; bump to 30 min so the
+  # proxy doesn't cut the connection mid-generation.
+  request_timeout: 1800
+
+environment_variables:
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
